@@ -13,7 +13,7 @@ mkdir -p "$DIR/data"
 
 DB_PATH="$DIR/data/openbrain.db" \
 MCP_ACCESS_KEY="$MCP_ACCESS_KEY" \
-PORT="${PORT:-8000}" \
+PORT="${PORT:-8081}" \
 "$DIR/ob1-go" >> "$DIR/ob1.log" 2>&1 &
 
 echo $! > "$DIR/ob1.pid"
