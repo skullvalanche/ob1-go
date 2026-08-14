@@ -39,7 +39,7 @@ func loadConfig() (*Config, error) {
 	embeddingAPIBase := getEnv("EMBEDDING_API_BASE", "http://127.0.0.1:11434/v1")
 	embeddingAPIKey := getEnv("EMBEDDING_API_KEY", "ollama")
 
-	port := 8000
+	port := 8081
 	if p := os.Getenv("PORT"); p != "" {
 		v, err := strconv.Atoi(p)
 		if err != nil {

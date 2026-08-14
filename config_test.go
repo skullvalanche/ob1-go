@@ -40,8 +40,8 @@ func TestLoadConfigDefaults(t *testing.T) {
 	if cfg.CitationBaseURL != "https://openbrain.local/thoughts" {
 		t.Errorf("CitationBaseURL = %q", cfg.CitationBaseURL)
 	}
-	if cfg.Port != 8000 {
-		t.Errorf("Port = %d, want 8000", cfg.Port)
+	if cfg.Port != 8081 {
+		t.Errorf("Port = %d, want 8081", cfg.Port)
 	}
 }
 

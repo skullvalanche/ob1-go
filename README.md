@@ -63,7 +63,7 @@ claude mcp add --transport http open-brain http://localhost:8081 \
 |----------|---------|-------------|
 | `MCP_ACCESS_KEY` | — | **Required.** Auth key for all clients |
 | `DB_PATH` | `/data/openbrain.db` | SQLite file path |
-| `PORT` | `8081` | HTTP port (`start.sh` default; the binary alone falls back to 8000) |
+| `PORT` | `8081` | HTTP port |
 | `EMBEDDING_API_BASE` | `http://127.0.0.1:11434/v1` | OpenAI-compatible embedding endpoint |
 | `EMBEDDING_MODEL` | `nomic-embed-text` | Embedding model |
 | `CHAT_API_BASE` | same as embedding | Chat endpoint for metadata extraction |
