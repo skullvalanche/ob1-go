@@ -73,6 +73,40 @@ func TestStoreInsertAndGetByID(t *testing.T) {
 	}
 }
 
+func TestStoreDeleteThought(t *testing.T) {
+	store, err := openStore(":memory:")
+	if err != nil {
+		t.Fatalf("openStore: %v", err)
+	}
+	if err := store.InsertThought("doomed", nil, `{"type":"observation"}`); err != nil {
+		t.Fatalf("InsertThought: %v", err)
+	}
+
+	deleted, err := store.DeleteThought(1)
+	if err != nil {
+		t.Fatalf("DeleteThought: %v", err)
+	}
+	if !deleted {
+		t.Error("DeleteThought(1) = false, want true")
+	}
+
+	row, err := store.GetByID(1)
+	if err != nil {
+		t.Fatalf("GetByID: %v", err)
+	}
+	if row != nil {
+		t.Error("GetByID(1) = non-nil after delete")
+	}
+
+	deleted, err = store.DeleteThought(1)
+	if err != nil {
+		t.Fatalf("DeleteThought(missing): %v", err)
+	}
+	if deleted {
+		t.Error("DeleteThought(missing) = true, want false")
+	}
+}
+
 func TestStoreListThoughtsFilters(t *testing.T) {
 	store, err := openStore(":memory:")
 	if err != nil {

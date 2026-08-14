@@ -82,6 +82,7 @@ func main() {
 		server := mcp.NewServer(&mcp.Implementation{Name: "ob1-go", Version: "1.0.0"}, nil)
 		registerReadOnlyTools(server, store, cfg)
 		registerCaptureThoughtTool(server, store, cfg)
+		registerDeleteThoughtTool(server, store)
 		return server
 	}, nil)
 

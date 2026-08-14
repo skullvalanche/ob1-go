@@ -50,6 +50,7 @@ claude mcp add --transport http open-brain http://localhost:8000 \
 | Tool | Description |
 |------|-------------|
 | `capture_thought` | Store a thought with embedding + metadata |
+| `delete_thought` | Permanently delete one thought by ID |
 | `search_thoughts` | Semantic search with similarity threshold |
 | `list_thoughts` | List recent thoughts, filterable by type/topic/person/days |
 | `thought_stats` | Summary counts by type, topic, people |

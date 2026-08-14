@@ -21,6 +21,19 @@ func newTestServerWithReadOnlyTools(t *testing.T, cfg *Config) (*Store, *mcp.Ser
 	return store, server
 }
 
+func TestFormatDate(t *testing.T) {
+	cases := map[string]string{
+		"2026-08-14T23:51:16Z": "2026-08-14",
+		"2026-01-15 10:00:00":  "2026-01-15",
+		"not a date":           "not a date",
+	}
+	for in, want := range cases {
+		if got := formatDate(in); got != want {
+			t.Errorf("formatDate(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
 func TestThoughtTitleTruncatesAndPrefixesDate(t *testing.T) {
 	long := strings.Repeat("word ", 30)
 	title := thoughtTitle(long, "2026-01-15 10:00:00")

@@ -24,12 +24,17 @@ func errorResult(err error) *mcp.CallToolResult {
 	return textResult(fmt.Sprintf("Error: %s", err.Error()), true)
 }
 
+// The sqlite driver returns created_at as RFC3339, but rows written by other
+// tooling can carry SQLite's own "2006-01-02 15:04:05" text form.
+var createdAtLayouts = []string{time.RFC3339, "2006-01-02 15:04:05"}
+
 func formatDate(createdAt string) string {
-	t, err := time.Parse("2006-01-02 15:04:05", createdAt)
-	if err != nil {
-		return createdAt
+	for _, layout := range createdAtLayouts {
+		if t, err := time.Parse(layout, createdAt); err == nil {
+			return t.Format("2006-01-02")
+		}
 	}
-	return t.Format("2006-01-02")
+	return createdAt
 }
 
 func thoughtTitle(content, createdAt string) string {
@@ -216,7 +221,7 @@ func registerReadOnlyTools(server *mcp.Server, store *Store, cfg *Config) {
 
 		var b strings.Builder
 		for i, r := range results {
-			fmt.Fprintf(&b, "--- Result %d (%.1f%% match) ---\n", i+1, r.Similarity*100)
+			fmt.Fprintf(&b, "--- Result %d (id=%d, %.1f%% match) ---\n", i+1, r.ID, r.Similarity*100)
 			fmt.Fprintf(&b, "Captured: %s\n", formatDate(r.CreatedAt))
 			typ, _ := r.Meta["type"].(string)
 			if typ == "" {
@@ -268,7 +273,7 @@ func registerReadOnlyTools(server *mcp.Server, store *Store, cfg *Config) {
 			if tags := strings.Join(stringSlice(m["topics"]), ", "); tags != "" {
 				suffix += " - " + tags
 			}
-			fmt.Fprintf(&b, "%d. [%s] (%s)\n   %s", i+1, formatDate(r.CreatedAt), suffix, r.Content)
+			fmt.Fprintf(&b, "%d. id=%d [%s] (%s)\n   %s", i+1, r.ID, formatDate(r.CreatedAt), suffix, r.Content)
 			if i < len(rows)-1 {
 				b.WriteString("\n\n")
 			}
@@ -324,6 +329,29 @@ func registerReadOnlyTools(server *mcp.Server, store *Store, cfg *Config) {
 			}
 		}
 		return textResult(strings.Join(lines, "\n")), nil, nil
+	})
+}
+
+type deleteThoughtParams struct {
+	ID int64 `json:"id" jsonschema:"ID of the thought to delete (from list_thoughts or search_thoughts)"`
+}
+
+func registerDeleteThoughtTool(server *mcp.Server, store *Store) {
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "delete_thought",
+		Description: "Permanently delete one thought by ID. Confirm the thought with fetch or list_thoughts before deleting.",
+	}, func(ctx context.Context, req *mcp.CallToolRequest, params *deleteThoughtParams) (*mcp.CallToolResult, any, error) {
+		thought, err := store.GetByID(params.ID)
+		if err != nil {
+			return errorResult(err), nil, nil
+		}
+		if thought == nil {
+			return textResult(fmt.Sprintf("No thought found with ID %d.", params.ID), true), nil, nil
+		}
+		if _, err := store.DeleteThought(params.ID); err != nil {
+			return errorResult(err), nil, nil
+		}
+		return textResult(fmt.Sprintf("Deleted thought %d: %s", params.ID, thoughtTitle(thought.Content, thought.CreatedAt))), nil, nil
 	})
 }
 

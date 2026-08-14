@@ -34,6 +34,7 @@ type Store struct {
 	byIDStmt         *sql.Stmt
 	allForSearchStmt *sql.Stmt
 	forStatsStmt     *sql.Stmt
+	deleteStmt       *sql.Stmt
 }
 
 func openStore(path string) (*Store, error) {
@@ -65,12 +66,18 @@ func openStore(path string) (*Store, error) {
 		return nil, err
 	}
 
+	deleteStmt, err := db.Prepare("DELETE FROM thoughts WHERE id = ?")
+	if err != nil {
+		return nil, err
+	}
+
 	return &Store{
 		db:               db,
 		insertStmt:       insertStmt,
 		byIDStmt:         byIDStmt,
 		allForSearchStmt: allForSearchStmt,
 		forStatsStmt:     forStatsStmt,
+		deleteStmt:       deleteStmt,
 	}, nil
 }
 
@@ -93,6 +100,18 @@ func (s *Store) GetByID(id int64) (*ThoughtRow, error) {
 		return nil, err
 	}
 	return &t, nil
+}
+
+func (s *Store) DeleteThought(id int64) (bool, error) {
+	res, err := s.deleteStmt.Exec(id)
+	if err != nil {
+		return false, err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return n > 0, nil
 }
 
 func (s *Store) AllForSearch() ([]ThoughtRow, error) {
@@ -132,7 +151,7 @@ func (s *Store) ForStats() ([]ThoughtRow, error) {
 }
 
 func (s *Store) ListThoughts(limit int, typ, topic, person string, days int) ([]ThoughtRow, error) {
-	query := "SELECT content, metadata, created_at FROM thoughts WHERE 1=1"
+	query := "SELECT id, content, metadata, created_at FROM thoughts WHERE 1=1"
 	var params []any
 
 	if typ != "" {
@@ -163,7 +182,7 @@ func (s *Store) ListThoughts(limit int, typ, topic, person string, days int) ([]
 	var out []ThoughtRow
 	for rows.Next() {
 		var t ThoughtRow
-		if err := rows.Scan(&t.Content, &t.Metadata, &t.CreatedAt); err != nil {
+		if err := rows.Scan(&t.ID, &t.Content, &t.Metadata, &t.CreatedAt); err != nil {
 			return nil, err
 		}
 		out = append(out, t)
