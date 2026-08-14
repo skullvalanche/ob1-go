@@ -25,7 +25,7 @@ If you wish, use `openssl rand -hex 32` to generate a key
 ## Usage
 
 ```bash
-./start.sh   # builds and starts on PORT (default 8000)
+./start.sh   # builds and starts on PORT (default 8081)
 ./stop.sh    # stop
 ```
 
@@ -37,12 +37,12 @@ All clients use the same endpoint and key:
 
 **Claude Code**
 ```bash
-claude mcp add --transport http open-brain http://localhost:8000 \
+claude mcp add --transport http open-brain http://localhost:8081 \
   --header "x-brain-key: YOUR_KEY" --scope user
 ```
 
 **Claude Desktop / ChatGPT / Cursor**
-- URL: `http://localhost:8000`
+- URL: `http://localhost:8081`
 - Header: `x-brain-key: YOUR_KEY`
 
 ## Tools
@@ -63,7 +63,7 @@ claude mcp add --transport http open-brain http://localhost:8000 \
 |----------|---------|-------------|
 | `MCP_ACCESS_KEY` | — | **Required.** Auth key for all clients |
 | `DB_PATH` | `/data/openbrain.db` | SQLite file path |
-| `PORT` | `8000` | HTTP port |
+| `PORT` | `8081` | HTTP port (`start.sh` default; the binary alone falls back to 8000) |
 | `EMBEDDING_API_BASE` | `http://127.0.0.1:11434/v1` | OpenAI-compatible embedding endpoint |
 | `EMBEDDING_MODEL` | `nomic-embed-text` | Embedding model |
 | `CHAT_API_BASE` | same as embedding | Chat endpoint for metadata extraction |
