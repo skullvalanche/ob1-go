@@ -2,8 +2,74 @@ package main
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 )
+
+func TestParseFlags(t *testing.T) {
+	f, err := parseFlags([]string{"-db", "/tmp/a.db", "-env=/tmp/e", "-mcp-access-key", "k"})
+	if err != nil {
+		t.Fatalf("parseFlags: %v", err)
+	}
+	if f.dbPath != "/tmp/a.db" || f.envFile != "/tmp/e" || f.mcpAccessKey != "k" {
+		t.Errorf("flags = %+v", f)
+	}
+
+	if f, err := parseFlags([]string{"--help"}); err != nil || !f.help {
+		t.Errorf("parseFlags(--help) = %+v, %v", f, err)
+	}
+	if _, err := parseFlags([]string{"-nope"}); err == nil {
+		t.Error("parseFlags(-nope) expected error")
+	}
+	if _, err := parseFlags([]string{"-db"}); err == nil {
+		t.Error("parseFlags(-db) with no value expected error")
+	}
+}
+
+func TestLoadEnvFileDoesNotOverrideEnv(t *testing.T) {
+	path := filepath.Join(t.TempDir(), ".env")
+	body := "# comment\n\nexport MCP_ACCESS_KEY=\"from-file\"\nCHAT_MODEL='file-model'\nnonsense\n"
+	if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+		t.Fatalf("WriteFile: %v", err)
+	}
+
+	os.Setenv("MCP_ACCESS_KEY", "from-env")
+	os.Unsetenv("CHAT_MODEL")
+	defer os.Unsetenv("MCP_ACCESS_KEY")
+	defer os.Unsetenv("CHAT_MODEL")
+
+	if err := loadEnvFile(path); err != nil {
+		t.Fatalf("loadEnvFile: %v", err)
+	}
+	if got := os.Getenv("MCP_ACCESS_KEY"); got != "from-env" {
+		t.Errorf("MCP_ACCESS_KEY = %q, want existing env to win", got)
+	}
+	if got := os.Getenv("CHAT_MODEL"); got != "file-model" {
+		t.Errorf("CHAT_MODEL = %q, want value from file", got)
+	}
+
+	if err := loadEnvFile(filepath.Join(t.TempDir(), "missing")); err == nil {
+		t.Error("loadEnvFile(missing) expected error")
+	}
+}
+
+func TestLoadConfigFlagsBeatEnv(t *testing.T) {
+	os.Setenv("MCP_ACCESS_KEY", "env-key")
+	os.Setenv("DB_PATH", "/env/path.db")
+	defer os.Unsetenv("MCP_ACCESS_KEY")
+	defer os.Unsetenv("DB_PATH")
+
+	cfg, err := loadConfig(&flags{dbPath: "/flag/path.db", mcpAccessKey: "flag-key"})
+	if err != nil {
+		t.Fatalf("loadConfig: %v", err)
+	}
+	if cfg.DBPath != "/flag/path.db" {
+		t.Errorf("DBPath = %q, want flag to win", cfg.DBPath)
+	}
+	if cfg.MCPAccessKey != "flag-key" {
+		t.Errorf("MCPAccessKey = %q, want flag to win", cfg.MCPAccessKey)
+	}
+}
 
 func TestLoadConfigDefaults(t *testing.T) {
 	os.Setenv("MCP_ACCESS_KEY", "test-key")
@@ -12,7 +78,7 @@ func TestLoadConfigDefaults(t *testing.T) {
 		os.Unsetenv(k)
 	}
 
-	cfg, err := loadConfig()
+	cfg, err := loadConfig(&flags{})
 	if err != nil {
 		t.Fatalf("loadConfig() error = %v", err)
 	}
@@ -47,7 +113,7 @@ func TestLoadConfigDefaults(t *testing.T) {
 
 func TestLoadConfigRequiresAccessKey(t *testing.T) {
 	os.Unsetenv("MCP_ACCESS_KEY")
-	if _, err := loadConfig(); err == nil {
+	if _, err := loadConfig(&flags{}); err == nil {
 		t.Fatal("loadConfig() expected error when MCP_ACCESS_KEY unset, got nil")
 	}
 }
@@ -58,7 +124,7 @@ func TestLoadConfigStripsCitationTrailingSlash(t *testing.T) {
 	defer os.Unsetenv("MCP_ACCESS_KEY")
 	defer os.Unsetenv("OPEN_BRAIN_CITATION_BASE_URL")
 
-	cfg, err := loadConfig()
+	cfg, err := loadConfig(&flags{})
 	if err != nil {
 		t.Fatalf("loadConfig() error = %v", err)
 	}

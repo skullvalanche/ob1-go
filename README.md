@@ -25,11 +25,25 @@ If you wish, use `openssl rand -hex 32` to generate a key
 ## Usage
 
 ```bash
-./start.sh   # builds and starts on PORT (default 8081)
+./build.sh   # compile ./ob1-go
+./start.sh   # start on PORT (default 8081)
 ./stop.sh    # stop
 ```
 
-Data lives at `./data/openbrain.db`.
+`start.sh` requires an existing binary — run `./build.sh` after changing code.
+
+Data lives at `~/.local/share/open-brain/openbrain.db` (honors `XDG_DATA_HOME`).
+Set `DB_PATH` to override.
+
+Running the binary directly, `.env` is not read unless you ask for it:
+
+```bash
+./ob1-go --help
+./ob1-go -env .env -db /path/to/openbrain.db
+```
+
+Flags: `-db`, `-mcp-access-key`, `-env`. Precedence is flag, then environment,
+then `-env` file.
 
 ## Connecting clients
 

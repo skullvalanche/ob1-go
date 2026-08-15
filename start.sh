@@ -6,15 +6,15 @@ if [[ -f "$DIR/ob1.pid" ]] && kill -0 "$(cat "$DIR/ob1.pid")" 2>/dev/null; then
   exit 0
 fi
 
-source "$DIR/.env"
-mkdir -p "$DIR/data"
+if [[ ! -x "$DIR/ob1-go" ]]; then
+  echo "no binary at $DIR/ob1-go — run ./build.sh first" >&2
+  exit 1
+fi
 
-(cd "$DIR" && go build -o ob1-go .)
+DB_PATH="${DB_PATH:-${XDG_DATA_HOME:-$HOME/.local/share}/open-brain/openbrain.db}"
+mkdir -p "$(dirname "$DB_PATH")"
 
-DB_PATH="$DIR/data/openbrain.db" \
-MCP_ACCESS_KEY="$MCP_ACCESS_KEY" \
-PORT="${PORT:-8081}" \
-"$DIR/ob1-go" >> "$DIR/ob1.log" 2>&1 &
+"$DIR/ob1-go" -env "$DIR/.env" -db "$DB_PATH" >> "$DIR/ob1.log" 2>&1 &
 
 echo $! > "$DIR/ob1.pid"
 echo "ob1-go started (pid $!)"
