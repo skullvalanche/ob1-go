@@ -5,22 +5,27 @@ Lightweight local AI memory server. Stores and searches thoughts via MCP, backed
 ## Requirements
 
 - Go 1.23+
-- [Ollama](https://ollama.com) with `nomic-embed-text` and `qwen2.5:1.5b`
-
-```bash
-ollama pull nomic-embed-text
-ollama pull qwen2.5:1.5b
-```
+- [Ollama](https://ollama.com), running, with `nomic-embed-text` and `qwen2.5:1.5b`
 
 ## Setup
 
 ```bash
-cp .env.example .env
+./setup.sh
 ```
 
-Edit `.env` and set `MCP_ACCESS_KEY` to a unique value.
+It checks Go and Ollama, pulls both models, writes a `.env` with a generated
+`MCP_ACCESS_KEY`, builds the binary, and prints the `claude mcp add` command
+with your key filled in. Re-running it is safe — an existing `.env` is left
+alone and present models are not re-pulled.
 
-If you wish, use `openssl rand -hex 32` to generate a key
+By hand instead:
+
+```bash
+ollama pull nomic-embed-text
+ollama pull qwen2.5:1.5b
+cp .env.example .env      # then set MCP_ACCESS_KEY, e.g. openssl rand -hex 32
+./build.sh
+```
 
 ## Usage
 
