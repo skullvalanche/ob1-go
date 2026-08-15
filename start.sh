@@ -14,7 +14,7 @@ fi
 DB_PATH="${DB_PATH:-${XDG_DATA_HOME:-$HOME/.local/share}/open-brain/openbrain.db}"
 mkdir -p "$(dirname "$DB_PATH")"
 
-"$DIR/ob1-go" -env "$DIR/.env" -db "$DB_PATH" >> "$DIR/ob1.log" 2>&1 &
+"$DIR/ob1-go" --env "$DIR/.env" --db "$DB_PATH" >> "$DIR/ob1.log" 2>&1 &
 
 echo $! > "$DIR/ob1.pid"
 echo "ob1-go started (pid $!)"

@@ -7,7 +7,7 @@ import (
 )
 
 func TestParseFlags(t *testing.T) {
-	f, err := parseFlags([]string{"-db", "/tmp/a.db", "-env=/tmp/e", "-mcp-access-key", "k"})
+	f, err := parseFlags([]string{"--db", "/tmp/a.db", "--env=/tmp/e", "--mcp-access-key", "k"})
 	if err != nil {
 		t.Fatalf("parseFlags: %v", err)
 	}
@@ -18,11 +18,14 @@ func TestParseFlags(t *testing.T) {
 	if f, err := parseFlags([]string{"--help"}); err != nil || !f.help {
 		t.Errorf("parseFlags(--help) = %+v, %v", f, err)
 	}
-	if _, err := parseFlags([]string{"-nope"}); err == nil {
-		t.Error("parseFlags(-nope) expected error")
+	if _, err := parseFlags([]string{"--nope"}); err == nil {
+		t.Error("parseFlags(--nope) expected error")
 	}
-	if _, err := parseFlags([]string{"-db"}); err == nil {
-		t.Error("parseFlags(-db) with no value expected error")
+	if _, err := parseFlags([]string{"--db"}); err == nil {
+		t.Error("parseFlags(--db) with no value expected error")
+	}
+	if _, err := parseFlags([]string{"-db", "/tmp/a.db"}); err == nil {
+		t.Error("parseFlags(-db) expected error: long flags need two dashes")
 	}
 }
 

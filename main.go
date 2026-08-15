@@ -28,13 +28,13 @@ const usage = `ob1-go — personal memory MCP server
 Usage: ob1-go [flags]
 
 Flags:
-  -db PATH               SQLite file path (env DB_PATH)
-  -mcp-access-key KEY    auth key clients send as x-brain-key (env MCP_ACCESS_KEY)
-  -env PATH              read KEY=VALUE lines from PATH before applying config
-  -h, --help             show this help
+  --db PATH               SQLite file path (env DB_PATH)
+  --mcp-access-key KEY    auth key clients send as x-brain-key (env MCP_ACCESS_KEY)
+  --env PATH              read KEY=VALUE lines from PATH before applying config
+  -h, --help              show this help
 
-MCP_ACCESS_KEY is required, by flag, environment, or -env file. Everything
-else has a default. Precedence: flag, then environment, then -env file.
+MCP_ACCESS_KEY is required, by flag, environment, or --env file. Everything
+else has a default. Precedence: flag, then environment, then --env file.
 
 Environment (default):
   MCP_ACCESS_KEY                 required, no default
@@ -66,8 +66,13 @@ func parseFlags(args []string) (*flags, error) {
 		}
 
 		name, value, inline := strings.Cut(arg, "=")
+		long, ok := strings.CutPrefix(name, "--")
+		if !ok {
+			return nil, fmt.Errorf("unknown flag %q (long flags take two dashes, e.g. --db)", arg)
+		}
+
 		var target *string
-		switch strings.TrimPrefix(name, "-") {
+		switch long {
 		case "db":
 			target = &f.dbPath
 		case "mcp-access-key":

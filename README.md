@@ -39,11 +39,11 @@ Running the binary directly, `.env` is not read unless you ask for it:
 
 ```bash
 ./ob1-go --help
-./ob1-go -env .env -db /path/to/openbrain.db
+./ob1-go --env .env --db /path/to/openbrain.db
 ```
 
-Flags: `-db`, `-mcp-access-key`, `-env`. Precedence is flag, then environment,
-then `-env` file.
+Flags: `--db`, `--mcp-access-key`, `--env`. Precedence is flag, then
+environment, then `--env` file.
 
 ## Connecting clients
 
