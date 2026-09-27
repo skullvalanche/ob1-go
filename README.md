@@ -5,7 +5,7 @@ Lightweight local AI memory server. Stores and searches thoughts via MCP, backed
 ## Requirements
 
 - Go 1.23+
-- [Ollama](https://ollama.com), running, with `nomic-embed-text` and `qwen2.5:1.5b`
+- An OpenAI-compatible API for embeddings and chat (Ollama, OpenAI, vLLM, etc.)
 
 ## Setup
 
@@ -13,16 +13,11 @@ Lightweight local AI memory server. Stores and searches thoughts via MCP, backed
 ./setup.sh
 ```
 
-It checks Go and Ollama, pulls both models, writes a `.env` with a generated
-`MCP_ACCESS_KEY`, builds the binary, and prints the `claude mcp add` command
-with your key filled in. Re-running it is safe — an existing `.env` is left
-alone and present models are not re-pulled.
+This checks Go, writes a `.env` with a generated `MCP_ACCESS_KEY`, builds the binary, and prints the `claude mcp add` command with your key filled in. Re-running is safe — an existing `.env` is left alone.
 
 By hand instead:
 
 ```bash
-ollama pull nomic-embed-text
-ollama pull qwen2.5:1.5b
 cp .env.example .env      # then set MCP_ACCESS_KEY, e.g. openssl rand -hex 32
 ./build.sh
 ```
@@ -37,9 +32,6 @@ cp .env.example .env      # then set MCP_ACCESS_KEY, e.g. openssl rand -hex 32
 
 `start.sh` requires an existing binary — run `./build.sh` after changing code.
 
-Data lives at `~/.local/share/open-brain/openbrain.db` (honors `XDG_DATA_HOME`).
-Set `DB_PATH` to override.
-
 Running the binary directly, `.env` is not read unless you ask for it:
 
 ```bash
@@ -52,17 +44,76 @@ environment, then `--env` file.
 
 ## Connecting clients
 
-All clients use the same endpoint and key:
+All clients connect to the same HTTP endpoint with an auth header:
+- **URL:** `http://localhost:8081`
+- **Header:** `x-brain-key: YOUR_KEY`
 
-**Claude Code**
+### Claude Code
+
 ```bash
 claude mcp add --transport http open-brain http://localhost:8081 \
   --header "x-brain-key: YOUR_KEY" --scope user
 ```
 
-**Claude Desktop / ChatGPT / Cursor**
-- URL: `http://localhost:8081`
-- Header: `x-brain-key: YOUR_KEY`
+### JSON config clients
+
+Most clients use a JSON config file. Add the appropriate block to your config:
+
+| Client | Config path |
+|--------|-------------|
+| Claude Desktop | `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)<br>`%APPDATA%\Claude\claude_desktop_config.json` (Windows) |
+| Cursor | `.cursor/mcp.json` (project) or `~/.cursor/mcp.json` (global) |
+| Windsurf | `~/.codeium/windsurf/mcp_config.json` |
+| Antigravity | `~/.gemini/config/mcp_config.json` (global) or `.agents/mcp_config.json` (workspace) |
+
+**Claude Desktop / Cursor** (use `url`):
+```json
+{
+  "mcpServers": {
+    "open-brain": {
+      "url": "http://localhost:8081",
+      "headers": { "x-brain-key": "YOUR_KEY" }
+    }
+  }
+}
+```
+
+**Windsurf / Antigravity** (use `serverUrl`):
+```json
+{
+  "mcpServers": {
+    "open-brain": {
+      "serverUrl": "http://localhost:8081",
+      "headers": { "x-brain-key": "YOUR_KEY" }
+    }
+  }
+}
+```
+
+### VS Code (Copilot Chat)
+
+Add to your VS Code `settings.json` (different structure):
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "open-brain": {
+        "url": "http://localhost:8081",
+        "headers": { "x-brain-key": "YOUR_KEY" }
+      }
+    }
+  }
+}
+```
+
+### ChatGPT (Actions)
+
+Add as a custom GPT action (requires public endpoint — ChatGPT cannot reach localhost):
+- **Server URL:** Your public endpoint
+- **Authentication:** API Key in header `x-brain-key`
+
+The `search` and `fetch` tools return citation URLs for ChatGPT compatibility.
 
 ## Tools
 
@@ -81,12 +132,16 @@ claude mcp add --transport http open-brain http://localhost:8081 \
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `MCP_ACCESS_KEY` | — | **Required.** Auth key for all clients |
-| `DB_PATH` | `/data/openbrain.db` | SQLite file path |
+| `DB_PATH` | see below | SQLite file path |
 | `PORT` | `8081` | HTTP port |
 | `EMBEDDING_API_BASE` | `http://127.0.0.1:11434/v1` | OpenAI-compatible embedding endpoint |
+| `EMBEDDING_API_KEY` | `ollama` | API key for embedding endpoint |
 | `EMBEDDING_MODEL` | `nomic-embed-text` | Embedding model |
 | `CHAT_API_BASE` | same as embedding | Chat endpoint for metadata extraction |
+| `CHAT_API_KEY` | same as embedding | API key for chat endpoint |
 | `CHAT_MODEL` | `qwen2.5:1.5b` | Model for metadata extraction |
 | `OPEN_BRAIN_CITATION_BASE_URL` | `https://openbrain.local/thoughts` | Base URL for `search`/`fetch` citation links |
 
-Any OpenAI-compatible API works for embeddings and chat — Ollama, OpenAI, Anthropic-compatible proxies, etc. Switching embedding models requires re-embedding existing data.
+**DB_PATH:** `start.sh` defaults to `~/.local/share/open-brain/openbrain.db` (honors `XDG_DATA_HOME`). The binary itself defaults to `/data/openbrain.db` if run directly without `--db`.
+
+Any OpenAI-compatible API works for embeddings and chat. Switching embedding models requires re-embedding existing data.
