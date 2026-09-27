@@ -5,7 +5,7 @@
       "Bash(npx graft:*)",
       "Bash(graft-dev:*)",
       "Bash(node dist/cli.js:*)",
-      "WebFetch(domain:antigravity.google)"
+      "Bash(git *)"
     ]
   },
   "hooks": {
